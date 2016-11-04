@@ -1,0 +1,27 @@
+<html ng-app="app">
+<meta charset="utf-8" /> 
+<head>
+	<title>Dashboard</title>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular-sanitize.js"></script>
+    <script src="core.js"></script>
+</head>
+<body ng-controller="mainController">
+	<h3>Today:   <span ng-bind="dutyToday.name"></span></h3>
+	<h3>Up next:  <span ng-bind="dutyTomorrow.name"></span></h3>
+	<ul>
+		<li ng-repeat="feed in feeds | limitTo:5">                    
+            <h5>{{feed.title}}</h5>                                        
+            <p ng-bind-html="feed.contentSnippet"></p>
+			<div ng-repeat="contents in  feed.mediaGroups"> 
+				<div ng-repeat="imgs in contents | limitTo:1">
+					<div ng-repeat="img in imgs | limitTo:1">
+						<img width="50" src="{{ img.url }}" />             
+					</div> 
+				</div>
+			</div>       
+        </li>
+	</ul>
+</body>
+</html>
