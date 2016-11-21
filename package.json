@@ -16,6 +16,8 @@
     "nodemailer": "~2.6.4",
     "request": "~2.75.0",
     "ejs": "~2.5.2",
-    "mongoose": "~4.6.5"
+    "mongoose": "~4.6.5",
+    "googleapis": "~14.1.0",
+    "google-auth-library": "~0.9.9"
   }
 }

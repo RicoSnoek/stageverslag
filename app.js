@@ -11,7 +11,8 @@ var request = require('request');
 var routes = require('./routes/index');
 
 var dayDuty = require('./modules/dayduty');
-var birthday = require('.modules/birthday');
+var birthday = require('./modules/birthday');
+var google = require('./modules/calendar');
 
 var app = express();
 
@@ -29,7 +30,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 dayDuty.mailPersonDuty();
-birthday.getBirthday();
+birthday.getBirthday(app, mongoose);
+google.connectGoogleCalendar(app);
 
 app.use('/', routes);
 
