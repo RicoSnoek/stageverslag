@@ -23,13 +23,18 @@ exports.connectGoogleCalendar = function(app) {
 		    console.log('Error loading client secret file: ' + err);
 		    return;
 		  }
+			authorize(JSON.parse(content)).then(
+				listEvents(oauth2Client).then(function(eventArray) {
+					nres.status(200).json(eventArray);
+				})
+			);
 		  // Authorize a client with the loaded credentials, then call the
 		  // Google Calendar API.
-		  authorize(JSON.parse(content), function() {
-		  	listEvents(function(eventArray) {
-		  		nres.status(200).json(eventArray);
-		  	});
-		  });
+		  // authorize(JSON.parse(content), function() {
+		  // 	listEvents(function(eventArray) {
+		  // 		nres.status(200).json(eventArray);
+		  // 	});
+		  // });
 		});
 	});
 
@@ -41,21 +46,24 @@ exports.connectGoogleCalendar = function(app) {
 	 * @param {function} callback The callback to call with the authorized client.
 	 */
 	function authorize(credentials, callback) {
-	  var clientSecret = credentials.installed.client_secret;
-	  var clientId = credentials.installed.client_id;
-	  var redirectUrl = credentials.installed.redirect_uris[0];
-	  var auth = new googleAuth();
-	  oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+		return new Promise(function(fulfill, reject) {
+		  var clientSecret = credentials.installed.client_secret;
+		  var clientId = credentials.installed.client_id;
+		  var redirectUrl = credentials.installed.redirect_uris[0];
+		  var auth = new googleAuth();
+		  oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
-	  // Check if we have previously stored a token.
-	  fs.readFile(TOKEN_PATH, function(err, token) {
-	    if (err) {
-	      getNewToken(oauth2Client, callback);
-	    } else {
-	      oauth2Client.credentials = JSON.parse(token);
-	      callback(oauth2Client);
-	    }
-	  });
+		  // Check if we have previously stored a token.
+		  fs.readFile(TOKEN_PATH, function(err, token) {
+		    if (err) {
+		      getNewToken(oauth2Client, callback);
+		    } else {
+		      oauth2Client.credentials = JSON.parse(token);
+		      //callback(oauth2Client);
+					fulfill(oauth2Client);
+		    }
+		  })
+		})
 	}
 
 	/**
@@ -107,31 +115,34 @@ exports.connectGoogleCalendar = function(app) {
 	  console.log('Token stored to ' + TOKEN_PATH);
 	}
 
-	function listEvents(callback) {
-	  var calendar = google.calendar('v3');
-	  calendar.events.list({
-	    auth: oauth2Client,
-	    calendarId: 'primary',
-	    timeMin: (new Date()).toISOString(),
-	    maxResults: 10,
-	    singleEvents: true,
-	    orderBy: 'startTime'
-	  }, function(err, response) {
-	    if (err) {
-	      console.log('The API returned an error: ' + err);
-	      return;
-	    }
-	    var events = response.items;
-	    if (events.length == 0) {
-	      console.log('No upcoming events found.');
-	    } else {
-	      eventArray = [];
-	      for (var i = 0; i < events.length; i++) {
-	        var event = events[i];
-	        eventArray.push(event);
-	      }
-	      callback(eventArray);
-	    }
-	  });
+	function listEvents() {
+		return new Promise(function(fulfill, reject) {
+		  var calendar = google.calendar('v3');
+		  calendar.events.list({
+		    auth: oauth2Client,
+		    calendarId: 'primary',
+		    timeMin: (new Date()).toISOString(),
+		    maxResults: 10,
+		    singleEvents: true,
+		    orderBy: 'startTime'
+		  }, function(err, response) {
+		    if (err) {
+		      console.log('The API returned an error: ' + err);
+		      return;
+		    }
+		    var events = response.items;
+		    if (events.length == 0) {
+		      console.log('No upcoming events found.');
+		    } else {
+		      eventArray = [];
+		      for (var i = 0; i < events.length; i++) {
+		        var event = events[i];
+		        eventArray.push(event);
+		      }
+					//callback(eventArray);
+					fulfill(eventArray);
+		    }
+		  })
+		})
 	}
 }

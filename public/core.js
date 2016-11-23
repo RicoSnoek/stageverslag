@@ -10,7 +10,7 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
     GoogleCalendar.getCalendarData();
 
 
-    GetBirthdays.getBirthdayData();
+    //GetBirthdays.getBirthdayData();
     DutyData.getDutyData();
     updateDuty = $interval(function() {
         DutyData.getDutyData();
@@ -23,7 +23,7 @@ dashboard.factory('DutyData', ['$rootScope', '$http', function($scope, $http) {
     return {
         getDutyData : function() {
             $http.get('/temp.json')
-            .success(function(data, status, headers, config) {   
+            .success(function(data, status, headers, config) {
                 var now = new Date();
                 console.log(now);
                 var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());
@@ -36,7 +36,7 @@ dashboard.factory('DutyData', ['$rootScope', '$http', function($scope, $http) {
                         var dutyArray = [];
                         $scope.dutyToday = duty;
                         $scope.dutyTomorrow = dutyTomorrow;
-                    } 
+                    }
                     else if(today.valueOf() != duty.date.valueOf() && today.getDay() == 6 || today.getDay() == 0) {
                         var weekendNotice = ' enjoy your weekend';
                         $scope.dutyToday = weekendNotice;
@@ -57,7 +57,7 @@ dashboard.factory('DutyData', ['$rootScope', '$http', function($scope, $http) {
                 console.log('Error: ' + data);
             });
         }
-    } 
+    }
 }]);
 
 dashboard.factory('GetFeed', ['$rootScope', '$http', function($scope, $http) {
