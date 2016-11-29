@@ -7,10 +7,15 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
         $scope.feeds = res.data.responseData.feed.entries;
     });
 
-    GoogleCalendar.getCalendarData();
+    GoogleCalendar.getCalendarData().then(function(data) {
+        console.log(data.data);
+        $scope.events = data.data;
+    }).catch(function(err) {
+        console.log(err);
+    });
 
 
-    //GetBirthdays.getBirthdayData();
+    GetBirthdays.getBirthdayData();
     DutyData.getDutyData();
     updateDuty = $interval(function() {
         DutyData.getDutyData();
@@ -25,7 +30,6 @@ dashboard.factory('DutyData', ['$rootScope', '$http', function($scope, $http) {
             $http.get('/temp.json')
             .success(function(data, status, headers, config) {
                 var now = new Date();
-                console.log(now);
                 var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());
 
                 for(var i = 0; i < data.length; i++) {
@@ -82,7 +86,6 @@ dashboard.factory('GetBirthdays', ['$rootScope', '$http', function($scope, $http
                     var birthdate = data[i];
                     birthdate.date = new Date(birthdate.date);
                     var birthday = birthdate.date.getMonth() + '/' + birthdate.date.getDate();
-                    console.log(toDayMonth + ' - ' + birthday);
                     if (toDayMonth == birthday) {
                         happyPeople.push(data[i]);
                     }
@@ -108,18 +111,10 @@ dashboard.factory('GetBirthdays', ['$rootScope', '$http', function($scope, $http
     }
 }]);
 
-dashboard.factory('GoogleCalendar', ['$http', '$rootScope', function($http, $scope){
+dashboard.factory('GoogleCalendar', ['$http', function($http){
     return {
         getCalendarData : function() {
-            $http.get('/api/events')
-            .success(function(data) {
-                console.log(data);
-                $scope.events = data;
-
-            })
-            .error(function(data) {
-                console.log('Error: ' + data);
-            });
+            return $http.get('/api/events');
         }
     }
 }]);

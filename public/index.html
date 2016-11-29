@@ -11,22 +11,22 @@
 	<h2>Today:   <span ng-bind="dutyToday.name"></span></h2>
 	<h3>Up next:  <span ng-bind="dutyTomorrow.name"></span></h3>
 	<h4><span ng-repeat="birthday in birthdays">Happy Birthday {{ birthday.text }}!</span></h4>
-	<div ng-repeat="event in events">
-		<h5>{{ event.summary }}</h5>
-		<div ng-repeat="attendees in event">
-			<div ng-repeat="attendee in attendees track by $index">
+	<ul>
+		<div ng-repeat="event in events">
+			<h5>{{ event.summary }}</h5>
+			<li ng-repeat="attendee in event.attendees" ng-show="event.attendees">
 				{{ attendee.email }}
-			</div>
+			</li>
 		</div>
-	</div>
+	</ul>
 	<ul>
 		<li ng-repeat="feed in feeds | limitTo:5">                    
             <h5>{{feed.title}}</h5>                                        
             <p ng-bind-html="feed.contentSnippet"></p>
 			<div ng-repeat="contents in  feed.mediaGroups"> 
-				<div ng-repeat="imgs in contents | limitTo:1">
-					<div ng-repeat="img in imgs | limitTo:1">
-						<img width="50" src="{{ img.url }}" />             
+				<div ng-repeat="imgs in contents">
+					<div ng-repeat="img in imgs | limitTo:1" ng-if="img">
+						<img width="50" src="{{img.url}}" />             
 					</div> 
 				</div>
 			</div>
