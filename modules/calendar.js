@@ -23,7 +23,7 @@ exports.connectGoogleCalendar = function(app) {
 
 			authorize(JSON.parse(content))
 				.then(function(oauth2Client) {
-					return listEvents(oauth2Client)
+					return listEvents(oauth2Client, 'primary')
 				})
 				.then(function(eventArray) {
 					nres.status(200).json(eventArray);
@@ -100,12 +100,12 @@ exports.connectGoogleCalendar = function(app) {
 		})
 	}
 
-	function listEvents(oauth2Client) {
+	function listEvents(oauth2Client, calendarId) {
 		return new Promise(function(resolve, reject) {
 		  var calendar = google.calendar('v3');
 		  calendar.events.list({
 		    auth: oauth2Client,
-		    calendarId: 'primary',
+		    calendarId: calendarId,
 		    timeMin: (new Date()).toISOString(),
 		    maxResults: 10,
 		    singleEvents: true,

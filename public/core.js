@@ -13,58 +13,76 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
     }).catch(function(err) {
         console.log(err);
     });
+    DutyData.getDutyData().then(function(duty) {
+        console.log(duty);
+        $scope.duty = duty;
+    }).catch(function() {
+        console.log('Error');
+    });
 
+    GetBirthdays.getBirthdayData().then(function(birthdays) {
+        $scope.birthdays = birthdays;
+    }).catch(function(err) {
+        console.log(err);
+    });
 
-    GetBirthdays.getBirthdayData();
-    DutyData.getDutyData();
     updateDuty = $interval(function() {
         DutyData.getDutyData();
         console.log('Updated');
     }, 36000000);
 
+
 }]);
 
-dashboard.factory('DutyData', ['$rootScope', '$http', function($scope, $http) {
+dashboard.factory('DutyData', ['$http', '$q', function($http, $q) {
     return {
         getDutyData : function() {
+            var deferred = $q.defer();
             $http.get('/temp.json')
             .success(function(data, status, headers, config) {
+
                 var now = new Date();
                 var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());
+                var activeDuty = new Object();
 
-                for(var i = 0; i < data.length; i++) {
+                for (var i = 0; i < data.length; i++) {
                     var duty = data[i];
                     duty.date = new Date(duty.date);
                     if (today.valueOf() == duty.date.valueOf()) {
                         var dutyTomorrow = data[i+1];
                         var dutyArray = [];
-                        $scope.dutyToday = duty;
-                        $scope.dutyTomorrow = dutyTomorrow;
-                    }
-                    else if(today.valueOf() != duty.date.valueOf() && today.getDay() == 6 || today.getDay() == 0) {
-                        var weekendNotice = ' enjoy your weekend';
-                        $scope.dutyToday = weekendNotice;
+                        activeDuty.today = duty;
+                        activeDuty.tomorrow = dutyTomorrow;
+                    } else {
+                        if (today.getDay() == 6 || today.getDay() == 0) {
+                            var weekendNotice = ' enjoy your weekend';
+                            activeDuty.today = weekendNotice;
 
-                        var tempDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                        if(today.getDay() == 6) {
-                            tempDate.setDate(today.getDate() + 2);
-                        } else if(today.getDay() == 0) {
-                            tempDate.setDate(today.getDate() + 1);
-                        }
-                        if(tempDate.valueOf() == duty.date.valueOf()){
-                            $scope.dutyTomorrow = data[i];
+                            var tempDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            if (today.getDay() == 6) {
+                                tempDate.setDate(today.getDate() + 2);
+                            } else if (today.getDay() == 0) {
+                                tempDate.setDate(today.getDate() + 1);
+                            }
+                            if (tempDate.valueOf() == duty.date.valueOf()){
+                                activeDuty.tomorrow = data[i];
+                            }
                         }
                     }
                 }
+                console.log(activeDuty);
+                deferred.resolve(activeDuty);
             })
             .error(function(data, status, headers, config) {
                 console.log('Error: ' + data);
+                deferred.reject("Data fail");
             });
+            return deferred.promise;
         }
     }
 }]);
 
-dashboard.factory('GetFeed', ['$rootScope', '$http', function($scope, $http) {
+dashboard.factory('GetFeed', ['$http', function($http) {
     return {
         getFeedData : function(url) {
             return $http.jsonp('//ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=50&callback=JSON_CALLBACK&q=' + encodeURIComponent(url));
@@ -72,31 +90,33 @@ dashboard.factory('GetFeed', ['$rootScope', '$http', function($scope, $http) {
     }
 }]);
 
-dashboard.factory('GetBirthdays', ['$rootScope', '$http', function($scope, $http) {
+dashboard.factory('GetBirthdays', ['$http', '$q', function($http, $q) {
     return {
         getBirthdayData : function() {
+            var deferred = $q.defer();
             $http.get('/api/birthdays')
             .success(function(data) {
                 var now = new Date();
                 var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());
                 var toDayMonth = today.getMonth() + '/' + today.getDate();
-                var happyPeople = [];
+                var birthdayList = [];
 
                 for(var i = 0; i < data.length; i++) {
                     var birthdate = data[i];
                     birthdate.date = new Date(birthdate.date);
                     var birthday = birthdate.date.getMonth() + '/' + birthdate.date.getDate();
                     if (toDayMonth == birthday) {
-                        happyPeople.push(data[i]);
+                        birthdayList.push(data[i]);
                     }
                     if(i == data.length - 1) {
-                        $scope.birthdays = happyPeople;
+                        deferred.resolve(birthdayList);
                     }
                 }
             })
             .error(function(data) {
-                console.log('Error: ' + data);
+                deferred.reject(data);
             });
+            return deferred.promise;
         },
         insertBirthday : function(data) {
             $http.post('/api/birthdays', data)
@@ -115,6 +135,9 @@ dashboard.factory('GoogleCalendar', ['$http', function($http){
     return {
         getCalendarData : function() {
             return $http.get('/api/events');
+        },
+        getDisplayName: function(attendee) {
+            return attendee.displayName ? attendee.displayName : attendee.email;
         }
     }
 }]);

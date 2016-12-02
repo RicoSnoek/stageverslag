@@ -5,11 +5,12 @@
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
 	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular-sanitize.js"></script>
+	<script src="//unpkg.com/angular-ui-router/release/angular-ui-router.min.js"></script>
     <script src="core.js"></script>
 </head>
 <body ng-controller="mainController">
-	<h2>Today:   <span ng-bind="dutyToday.name"></span></h2>
-	<h3>Up next:  <span ng-bind="dutyTomorrow.name"></span></h3>
+	<h2>Today:   <span ng-bind="duty.today.name"></span></h2>
+	<h3>Up next:  <span ng-bind="duty.tomorrow.name"></span></h3>
 	<h4><span ng-repeat="birthday in birthdays">Happy Birthday {{ birthday.text }}!</span></h4>
 	<ul>
 		<div ng-repeat="event in events">
@@ -26,7 +27,7 @@
 			<div ng-repeat="contents in  feed.mediaGroups"> 
 				<div ng-repeat="imgs in contents">
 					<div ng-repeat="img in imgs | limitTo:1" ng-if="img">
-						<img width="50" src="{{img.url}}" />             
+						<img width="50" ng-src="{{img.url}}" />             
 					</div> 
 				</div>
 			</div>
