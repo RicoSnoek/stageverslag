@@ -9,7 +9,7 @@ exports.connectGoogleCalendar = function(app) {
 
 	// If modifying these scopes, delete your previously saved credentials
 	// at ~/.credentials/calendar-nodejs-quickstart.json
-	var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+	var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets'];
 	var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
 	    process.env.USERPROFILE) + '/.credentials/';
 	var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
@@ -34,6 +34,27 @@ exports.connectGoogleCalendar = function(app) {
 		});
 	});
 
+	app.get('/api/drive/', function(req, nres) {
+		
+		fs.readFile('client_secret.json', function(err, content) {
+			if (err) {
+		    	console.log('Error loading client secret file: ' + err);
+		    	return;
+			}
+		
+			authorize(JSON.parse(content))
+				.then(function(oauth2Client) {
+					return callAppsScript(oauth2Client);
+				})
+				.then(function(driveResponse) {
+					nres.status(200).json(driveResponse);
+				})
+				.catch(function(err) {
+					console.log(err);
+				})
+		});		
+	});
+
 	function authorize(credentials) {
 		return new Promise(function(resolve, reject) {
 			var clientSecret = credentials.installed.client_secret;
@@ -47,8 +68,11 @@ exports.connectGoogleCalendar = function(app) {
 			    if (err) {
 			    	getNewToken(oauth2Client).then(function(oauth2Client) {
 			    		oauth2Client.credentials = JSON.parse(token);
-						resolve(oauth2Client);
-			    	}).catch(function(err) {
+			    	})
+			    	.then(function(oauth2Client) {
+			    		resolve(oauth2Client);
+			    	})
+			    	.catch(function(err) {
 			    		reject(err);
 			    	})
 			    } else {
@@ -107,7 +131,7 @@ exports.connectGoogleCalendar = function(app) {
 		    auth: oauth2Client,
 		    calendarId: calendarId,
 		    timeMin: (new Date()).toISOString(),
-		    maxResults: 10,
+		    maxResults: 5,
 		    singleEvents: true,
 		    orderBy: 'startTime'
 		  }, function(err, response) {
@@ -123,11 +147,44 @@ exports.connectGoogleCalendar = function(app) {
 			        var event = events[i];
 			        eventArray.push(event);
 			      }
-					//callback(eventArray);
 					resolve(eventArray);
 			    }
 			}
 		  })
 		})
+	}
+
+	function callAppsScript(oauth2Client) {
+		return new Promise(function(resolve, reject) {
+			var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
+			var script = google.script('v1');
+			script.scripts.run({
+				auth: oauth2Client,
+				resource: {
+					function: 'exportSheetForApi'
+				},
+				scriptId: scriptId
+			}, function(err, resp) {
+				if (err) {
+					reject(err);
+				}
+				if (resp.error) {
+					var error = resp.error.details[0];
+					console.log('Script error message: ' + error.errorMessage);
+					console.log('Script error stacktrace:');
+
+					if (error.scriptStackTraceElements) {
+						for (var i = 0; i < error.scriptStackTraceElements.length; i++) {
+							var trace = error.scriptStackTraceElements[i];
+							console.log('\t%s: %s', trace.function, trace.lineNumber);
+						}
+					}
+				} 
+				else {
+					var sheetData = JSON.parse(resp.response.result);
+					resolve(sheetData);
+				}
+			})
+		});
 	}
 }

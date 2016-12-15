@@ -12,7 +12,7 @@ var routes = require('./routes/index');
 
 var dayDuty = require('./modules/dayduty');
 var birthday = require('./modules/birthday');
-var google = require('./modules/calendar');
+var google = require('./modules/googleapi');
 
 var app = express();
 
