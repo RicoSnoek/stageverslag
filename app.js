@@ -11,12 +11,11 @@ var request = require('request');
 var routes = require('./routes/index');
 
 var dayDuty = require('./modules/dayduty');
-var birthday = require('./modules/birthday');
 var google = require('./modules/googleapi');
 
 var app = express();
 
-mongoose.connect('mongodb://localhost:27017/');
+//mongoose.connect('mongodb://localhost:27017/');
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -29,9 +28,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-dayDuty.mailPersonDuty();
-birthday.getBirthday(app, mongoose);
 google.connectGoogleCalendar(app);
+google.getsheetsData(app);
+dayDuty.mailPersonDuty(google);
+
 
 app.use('/', routes);
 

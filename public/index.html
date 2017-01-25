@@ -2,36 +2,60 @@
 <meta charset="utf-8" /> 
 <head>
 	<title>Dashboard</title>
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans|Open+Sans+Condensed:300" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="styles/style.css">
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
 	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular-sanitize.js"></script>
-	<script src="//unpkg.com/angular-ui-router/release/angular-ui-router.min.js"></script>
     <script src="core.js"></script>
 </head>
 <body ng-controller="mainController">
-	<h2>Today:   <span ng-bind="duty.today.name"></span></h2>
-	<h3>Up next:  <span ng-bind="duty.tomorrow.name"></span></h3>
-	<h4><span ng-repeat="birthday in birthdays">Happy Birthday {{ birthday.text }}!</span></h4>
-	<ul>
-		<div ng-repeat="event in events">
-			<h5>{{ event.summary }}</h5>
-			<li ng-repeat="attendee in event.attendees" ng-show="event.attendees">
-				{{ attendee.email }}
-			</li>
-		</div>
-	</ul>
-	<ul>
-		<li ng-repeat="feed in feeds | limitTo:5">                    
-            <h5>{{feed.title}}</h5>                                        
-            <p ng-bind-html="feed.contentSnippet"></p>
-			<div ng-repeat="contents in  feed.mediaGroups"> 
-				<div ng-repeat="imgs in contents">
-					<div ng-repeat="img in imgs | limitTo:1" ng-if="img">
-						<img width="50" ng-src="{{img.url}}" />             
-					</div> 
-				</div>
+	<div class="wrapper">
+
+		<div class="container">
+			<h2>Today:   <span ng-bind="duty.today.name"></span></h2>
+			<div ng-if="birthdays != ''">
+				<h4>Happy Birthday <span ng-repeat="birthday in birthdays">{{ birthday.name }}</span></h4>
+			</div>			
+			<h3>Up next:  <span ng-bind="duty.tomorrow.name"></span></h3>
+
+			<div ng-if="sheet != ''">
+				<h4>Visitors: {{ sheet[0].visitors }}</h4>
+				<h4>Lunch: {{ sheet[0].lunch }}</h4>
 			</div>
-        </li>
-	</ul>
+		</div>
+		<div class="feed-container">
+		    <div ng-repeat="data in feeds">
+		    	<div ng-repeat="items in data.item | limitTo:5" class="feed-item">
+		    		<img class="feed-item-img" width="75" ng-src="{{ items['media:content'][0].$.url }}">
+		    		<div class="feed-item-text">
+		    			<p class="feed-item-title">{{ items.title[0] }}</p>
+		    			<p ng-bind="items.pubDate[0] | date:'MMMM dd yyyy'"></p>
+		    		</div>
+		    	</div>
+			</div>
+		</div>
+
+
+
+	</div>
+	<div class="wrapper2">
+		<div class="room1">
+			<h3>Meeting Room 1</h3>
+			<ul>
+				<div ng-repeat="event in events">
+					<h5>{{ event.summary }}</h5>
+					<p ng-bind="event.start.dateTime | date:'h:mm - EEE'"></p>
+					<!--<li ng-repeat="attendee in event.attendees" ng-show="event.attendees">
+						{{ attendee.email }}
+					</li> -->
+				</div>
+			</ul>
+		</div>
+		<div class="room2">
+		    <h3>Meeting Room 2</h3>
+		    <!-- EVENTS -->
+		</div>
+	</div>
 </body>
 </html>

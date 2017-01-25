@@ -1,11 +1,19 @@
 var dashboard = angular.module('app', ['ngSanitize']);
 
-dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetFeed', 'GetBirthdays', 'GoogleCalendar', function($interval, $scope, DutyData, GetFeed, GetBirthdays, GoogleCalendar) {
+dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetFeed', 'GetSheet','GetBirthdays', 'GoogleCalendar', function($interval, $scope, DutyData, GetFeed, GetSheet,GetBirthdays, GoogleCalendar) {
 
-    GetFeed.getFeedData('http://feeds.feedburner.com/TechCrunch/').then(function(res){
+    GetFeed.getFeedData().then(function(res){
         console.log(res.data);
-        $scope.feeds = res.data.responseData.feed.entries;
+         $scope.feeds = res.data;
+    }).catch(function(res){
+        console.log(res);
     });
+    GetSheet.getSheetData().then(function(res) {
+        console.log(res);
+        $scope.sheet = res;
+    }).catch(function(res) {
+        console.log(res);
+    })
 
     GoogleCalendar.getCalendarData().then(function(data) {
         console.log(data.data);
@@ -21,15 +29,18 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
     });
 
     GetBirthdays.getBirthdayData().then(function(birthdays) {
-        $scope.birthdays = birthdays;
+        if(birthdays != null) {
+            $scope.birthdays = birthdays; 
+        }
+
     }).catch(function(err) {
         console.log(err);
     });
 
-    updateDuty = $interval(function() {
-        DutyData.getDutyData();
-        console.log('Updated');
-    }, 36000000);
+    // updateDuty = $interval(function() {
+    //     DutyData.getDutyData();
+    //     console.log('Updated');
+    // }, 36000000);
 
 
 }]);
@@ -37,7 +48,31 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
 dashboard.factory('GetFeed', ['$http', function($http) {
     return {
         getFeedData : function(url) {
-            return $http.jsonp('//ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=50&callback=JSON_CALLBACK&q=' + encodeURIComponent(url));
+            return $http.get('/api/techcrunch');
+
+        }
+    }
+}]);
+
+dashboard.factory('GetSheet', ['$http', '$q',  function($http, $q) {
+    return {
+        getSheetData : function(url) {
+            var deferred = $q.defer();
+            $http.get('/api/sheet')
+            .success(function(data) {
+                var now = new Date();
+                var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());
+                var miscData = [];
+
+                for (var i = 0; i < data.length; i++) {
+                    data[i].date = new Date(data[i].date);
+                    if(data[i].date.valueOf() == today.valueOf()) {
+                         miscData.push(data[i]);
+                    }
+                }
+                deferred.resolve(miscData);
+            })
+            return deferred.promise;
         }
     }
 }]);
@@ -60,12 +95,11 @@ dashboard.factory('GetBirthdays', ['$http', '$q', function($http, $q) {
                     if (toDayMonth == birthday) {
                         birthdayList.push(data[i]);
                     }
-                    if(i == data.length - 1) {
-                        deferred.resolve(birthdayList);
-                    }
                 }
+                deferred.resolve(birthdayList);
             })
             .error(function(data) {
+                console.log('Rejected');
                 deferred.reject(data);
             });
             return deferred.promise;
@@ -84,6 +118,7 @@ dashboard.factory('GetBirthdays', ['$http', '$q', function($http, $q) {
 }]);
 
 dashboard.factory('GoogleCalendar', ['$http', function($http){
+    // TODO: Show displayName if not available email instead
     return {
         getCalendarData : function() {
             return $http.get('/api/events');

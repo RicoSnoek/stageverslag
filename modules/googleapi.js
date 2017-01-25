@@ -1,6 +1,5 @@
 var exports = module.exports = {};
 
-exports.connectGoogleCalendar = function(app) {
 	var Promise = require('bluebird');
 	var fs = require('fs');
 	var readline = require('readline');
@@ -14,6 +13,8 @@ exports.connectGoogleCalendar = function(app) {
 	    process.env.USERPROFILE) + '/.credentials/';
 	var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
+
+exports.connectGoogleCalendar = function(app) {
 	app.get('/api/events', function(req, nres) {
 		fs.readFile('client_secret.json', function(err, content) {
 			if (err) {
@@ -33,9 +34,10 @@ exports.connectGoogleCalendar = function(app) {
 				})
 		});
 	});
+}
 
-	app.get('/api/drive/', function(req, nres) {
-		
+exports.getsheetsData = function(app) {
+	app.get('/api/drive/', function(req, nres) {	
 		fs.readFile('client_secret.json', function(err, content) {
 			if (err) {
 		    	console.log('Error loading client secret file: ' + err);
@@ -44,7 +46,7 @@ exports.connectGoogleCalendar = function(app) {
 		
 			authorize(JSON.parse(content))
 				.then(function(oauth2Client) {
-					return callAppsScript(oauth2Client);
+					return callAppsScript(oauth2Client, 'Duties');
 				})
 				.then(function(driveResponse) {
 					nres.status(200).json(driveResponse);
@@ -55,136 +57,204 @@ exports.connectGoogleCalendar = function(app) {
 		});		
 	});
 
-	function authorize(credentials) {
-		return new Promise(function(resolve, reject) {
-			var clientSecret = credentials.installed.client_secret;
-			var clientId = credentials.installed.client_id;
-			var redirectUrl = credentials.installed.redirect_uris[0];
-			var auth = new googleAuth();
-			var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
-
-			// Check if we have previously stored a token.
-			fs.readFile(TOKEN_PATH, function(err, token) {
-			    if (err) {
-			    	getNewToken(oauth2Client).then(function(oauth2Client) {
-			    		oauth2Client.credentials = JSON.parse(token);
-			    	})
-			    	.then(function(oauth2Client) {
-			    		resolve(oauth2Client);
-			    	})
-			    	.catch(function(err) {
-			    		reject(err);
-			    	})
-			    } else {
-	    			oauth2Client.credentials = JSON.parse(token);
-					resolve(oauth2Client);
-		    	}
-			})
-		})
-	}
-
-	function getNewToken(oauth2Client) {
-		return new Promise(function(resolve, reject) {	
-			var authUrl = oauth2Client.generateAuthUrl({
-		    	access_type: 'offline',
-		    	scope: SCOPES
-			});
-			console.log('Authorize this app by visiting this url: ', authUrl);
-			var rl = readline.createInterface({
-		    	input: process.stdin,
-		    	output: process.stdout
-			});
-			rl.question('Enter the code from that page here: ', function(code) {
-		    	rl.close();
-		    	oauth2Client.getToken(code, function(err, token) {
-		    		if (err) {
-		    		    console.log('Error while trying to retrieve access token', err);
-		    		    return;
-		    		}
-		    		oauth2Client.credentials = token;
-		    		storeToken(token).then(function(oauth2Client) {
-		    			resolve(oauth2Client);
-		    		});
-		    	});
-			});
-		})  
-	}
-
-	function storeToken(token) {
-		return new Promise(function(resolve, reject) {
-			try {
-			    fs.mkdirSync(TOKEN_DIR);
-			} catch (err) {
-			    if (err.code != 'EEXIST') {
-				    throw err;
-			    }
+	app.get('/api/sheet/', function(req, nres) {	
+		fs.readFile('client_secret.json', function(err, content) {
+			if (err) {
+		    	console.log('Error loading client secret file: ' + err);
+		    	return;
 			}
-			fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-			console.log('Token stored to ' + TOKEN_PATH);
-		})
-	}
+		
+			authorize(JSON.parse(content))
+				.then(function(oauth2Client) {
+					return callAppsScript(oauth2Client, 'Activities');
+				})
+				.then(function(driveResponse) {
+					nres.status(200).json(driveResponse);
+				})
+				.catch(function(err) {
+					console.log(err);
+				})
+		});		
+	});
 
-	function listEvents(oauth2Client, calendarId) {
-		return new Promise(function(resolve, reject) {
-		  var calendar = google.calendar('v3');
-		  calendar.events.list({
-		    auth: oauth2Client,
-		    calendarId: calendarId,
-		    timeMin: (new Date()).toISOString(),
-		    maxResults: 5,
-		    singleEvents: true,
-		    orderBy: 'startTime'
-		  }, function(err, response) {
+	app.get('/api/birthdays/', function(req, nres) {	
+		fs.readFile('client_secret.json', function(err, content) {
+			if (err) {
+		    	console.log('Error loading client secret file: ' + err);
+		    	return;
+			}
+		
+			authorize(JSON.parse(content))
+				.then(function(oauth2Client) {
+					return callAppsScript(oauth2Client, 'Birthdays');
+				})
+				.then(function(driveResponse) {
+					nres.status(200).json(driveResponse);
+				})
+				.catch(function(err) {
+					console.log(err);
+				})
+		});		
+	});
+}
+
+exports.sheetData = function() {
+	return new Promise(function(resolve, reject) {
+		fs.readFile('client_secret.json', function(err, content) {
+			if (err) {
+		    	console.log('Error loading client secret file: ' + err);
+		    	return;
+			}
+		
+			authorize(JSON.parse(content))
+				.then(function(oauth2Client) {
+					return callAppsScript(oauth2Client, 'Duties');
+				})
+				.then(function(driveResponse) {
+					resolve(driveResponse);
+				})
+				.catch(function(err) {
+					console.log(err);
+				})
+		});			
+	})
+};
+
+
+
+
+function authorize(credentials) {
+	return new Promise(function(resolve, reject) {
+		var clientSecret = credentials.installed.client_secret;
+		var clientId = credentials.installed.client_id;
+		var redirectUrl = credentials.installed.redirect_uris[0];
+		var auth = new googleAuth();
+		var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+
+		// Check if we have previously stored a token.
+		fs.readFile(TOKEN_PATH, function(err, token) {
 		    if (err) {
-		      reject(err);
+		    	getNewToken(oauth2Client).then(function(oauth2Client) {
+		    		oauth2Client.credentials = JSON.parse(token);
+		    	})
+		    	.then(function(oauth2Client) {
+		    		resolve(oauth2Client);
+		    	})
+		    	.catch(function(err) {
+		    		reject(err);
+		    	})
 		    } else {
-			    var events = response.items;
-			    if (events.length == 0) {
-			      console.log('No upcoming events found.');
-			    } else {
-			      var eventArray = [];
-			      for (var i = 0; i < events.length; i++) {
-			        var event = events[i];
-			        eventArray.push(event);
-			      }
-					resolve(eventArray);
-			    }
-			}
-		  })
+    			oauth2Client.credentials = JSON.parse(token);
+				resolve(oauth2Client);
+	    	}
 		})
-	}
+	})
+}
 
-	function callAppsScript(oauth2Client) {
-		return new Promise(function(resolve, reject) {
-			var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
-			var script = google.script('v1');
-			script.scripts.run({
-				auth: oauth2Client,
-				resource: {
-					function: 'exportSheetForApi'
-				},
-				scriptId: scriptId
-			}, function(err, resp) {
-				if (err) {
-					reject(err);
-				}
-				if (resp.error) {
-					var error = resp.error.details[0];
-					console.log('Script error message: ' + error.errorMessage);
-					console.log('Script error stacktrace:');
-
-					if (error.scriptStackTraceElements) {
-						for (var i = 0; i < error.scriptStackTraceElements.length; i++) {
-							var trace = error.scriptStackTraceElements[i];
-							console.log('\t%s: %s', trace.function, trace.lineNumber);
-						}
-					}
-				} 
-				else {
-					var sheetData = JSON.parse(resp.response.result);
-					resolve(sheetData);
-				}
-			})
+function getNewToken(oauth2Client) {
+	return new Promise(function(resolve, reject) {	
+		var authUrl = oauth2Client.generateAuthUrl({
+	    	access_type: 'offline',
+	    	scope: SCOPES
 		});
-	}
+		console.log('Authorize this app by visiting this url: ', authUrl);
+		var rl = readline.createInterface({
+	    	input: process.stdin,
+	    	output: process.stdout
+		});
+		rl.question('Enter the code from that page here: ', function(code) {
+	    	rl.close();
+	    	oauth2Client.getToken(code, function(err, token) {
+	    		if (err) {
+	    		    console.log('Error while trying to retrieve access token', err);
+	    		    return;
+	    		}
+	    		oauth2Client.credentials = token;
+	    		storeToken(token).then(function(oauth2Client) {
+	    			resolve(oauth2Client);
+	    		});
+	    	});
+		});
+	})  
+}
+
+function storeToken(token) {
+	return new Promise(function(resolve, reject) {
+		try {
+		    fs.mkdirSync(TOKEN_DIR);
+		} catch (err) {
+		    if (err.code != 'EEXIST') {
+			    throw err;
+		    }
+		}
+		fs.writeFile(TOKEN_PATH, JSON.stringify(token));
+		console.log('Token stored to ' + TOKEN_PATH);
+	})
+}
+
+function listEvents(oauth2Client, calendarId) {
+	return new Promise(function(resolve, reject) {
+	  var calendar = google.calendar('v3');
+	  calendar.events.list({
+	    auth: oauth2Client,
+	    calendarId: calendarId,
+	    timeMin: (new Date()).toISOString(),
+	    maxResults: 5,
+	    singleEvents: true,
+	    orderBy: 'startTime'
+	  }, function(err, response) {
+	    if (err) {
+	      reject(err);
+	    } else {
+		    var events = response.items;
+		    if (events.length == 0) {
+		      console.log('No upcoming events found.');
+		    } else {
+		      var eventArray = [];
+		      for (var i = 0; i < events.length; i++) {
+		        var event = events[i];
+		        eventArray.push(event);
+		      }
+				resolve(eventArray);
+		    }
+		}
+	  })
+	})
+}
+
+function callAppsScript(oauth2Client, targetedSheet) {
+	return new Promise(function(resolve, reject) {
+		var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
+		var script = google.script('v1');
+		script.scripts.run({
+			auth: oauth2Client,
+			resource: {
+				function: 'exportSheetForApi',
+				parameters: [
+					targetedSheet
+				]
+			},
+			scriptId: scriptId
+		}, function(err, resp) {
+			if (err) {
+				reject(err);
+			}
+			else if (resp.error) {
+				var error = resp.error.details[0];
+				console.log('Script error message: ' + error.errorMessage);
+				console.log('Script error stacktrace:');
+
+				if (error.scriptStackTraceElements) {
+					for (var i = 0; i < error.scriptStackTraceElements.length; i++) {
+						var trace = error.scriptStackTraceElements[i];
+						console.log('\t%s: %s', trace.function, trace.lineNumber);
+					}
+				}
+			} 
+			else {
+				var sheetData = JSON.parse(resp.response.result);
+				resolve(sheetData);
+			}
+		})
+	});
 }
