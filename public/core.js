@@ -54,6 +54,19 @@ dashboard.factory('GetFeed', ['$http', function($http) {
     }
 }]);
 
+
+dashboard.factory('GoogleCalendar', ['$http', function($http){
+    // TODO: Show displayName if not available email instead
+    return {
+        getCalendarData : function() {
+            return $http.get('/api/events');
+        },
+        getDisplayName: function(attendee) {
+            return attendee.displayName ? attendee.displayName : attendee.email;
+        }
+    }
+}]);
+
 dashboard.factory('GetSheet', ['$http', '$q',  function($http, $q) {
     return {
         getSheetData : function(url) {
@@ -117,22 +130,11 @@ dashboard.factory('GetBirthdays', ['$http', '$q', function($http, $q) {
     }
 }]);
 
-dashboard.factory('GoogleCalendar', ['$http', function($http){
-    // TODO: Show displayName if not available email instead
-    return {
-        getCalendarData : function() {
-            return $http.get('/api/events');
-        },
-        getDisplayName: function(attendee) {
-            return attendee.displayName ? attendee.displayName : attendee.email;
-        }
-    }
-}]);
 dashboard.factory('DutyData', ['$http', '$q', function($http, $q) {
     return {
         getDutyData : function() {
             var deferred = $q.defer();
-            $http.get('/api/drive')
+            $http.get('/api/duties')
             .success(function(data) {
                 var now = new Date();
                 var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());

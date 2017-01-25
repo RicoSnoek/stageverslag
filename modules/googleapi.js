@@ -16,89 +16,65 @@ var exports = module.exports = {};
 
 exports.connectGoogleCalendar = function(app) {
 	app.get('/api/events', function(req, nres) {
-		fs.readFile('client_secret.json', function(err, content) {
-			if (err) {
-		    	console.log('Error loading client secret file: ' + err);
-		    	return;
-			}
-
-			authorize(JSON.parse(content))
-				.then(function(oauth2Client) {
-					return listEvents(oauth2Client, 'primary')
-				})
-				.then(function(eventArray) {
-					nres.status(200).json(eventArray);
-				})
-				.catch(function(err) {
-					console.log(err);
-				})
-		});
+		authAndGet('primary', 'events')
+			.then(function(googleResponse) {
+				nres.status(200).json(googleResponse);
+			})
+			.catch(function(err) {
+				console.log(err);
+			});	
 	});
 }
 
 exports.getsheetsData = function(app) {
-	app.get('/api/drive/', function(req, nres) {	
-		fs.readFile('client_secret.json', function(err, content) {
-			if (err) {
-		    	console.log('Error loading client secret file: ' + err);
-		    	return;
-			}
-		
-			authorize(JSON.parse(content))
-				.then(function(oauth2Client) {
-					return callAppsScript(oauth2Client, 'Duties');
-				})
-				.then(function(driveResponse) {
-					nres.status(200).json(driveResponse);
-				})
-				.catch(function(err) {
-					console.log(err);
-				})
-		});		
+	app.get('/api/duties/', function(req, nres) {	
+		authAndGet('Duties', 'sheet')
+			.then(function(googleResponse) {
+				nres.status(200).json(googleResponse);
+			})
+			.catch(function(err) {
+				console.log(err);
+			});		
 	});
 
 	app.get('/api/sheet/', function(req, nres) {	
-		fs.readFile('client_secret.json', function(err, content) {
-			if (err) {
-		    	console.log('Error loading client secret file: ' + err);
-		    	return;
-			}
-		
-			authorize(JSON.parse(content))
-				.then(function(oauth2Client) {
-					return callAppsScript(oauth2Client, 'Activities');
-				})
-				.then(function(driveResponse) {
-					nres.status(200).json(driveResponse);
-				})
-				.catch(function(err) {
-					console.log(err);
-				})
-		});		
+		authAndGet('Activities', 'sheet')
+			.then(function(googleResponse) {
+				nres.status(200).json(googleResponse);
+			})
+			.catch(function(err) {
+				console.log(err);
+			});			
 	});
 
 	app.get('/api/birthdays/', function(req, nres) {	
-		fs.readFile('client_secret.json', function(err, content) {
-			if (err) {
-		    	console.log('Error loading client secret file: ' + err);
-		    	return;
-			}
-		
-			authorize(JSON.parse(content))
-				.then(function(oauth2Client) {
-					return callAppsScript(oauth2Client, 'Birthdays');
-				})
-				.then(function(driveResponse) {
-					nres.status(200).json(driveResponse);
-				})
-				.catch(function(err) {
-					console.log(err);
-				})
-		});		
+		authAndGet('Birthdays', 'sheet')
+			.then(function(googleResponse) {
+				nres.status(200).json(googleResponse);
+			})
+			.catch(function(err) {
+				console.log(err);
+			});		
 	});
 }
 
 exports.sheetData = function() {
+	return new Promise(function(resolve, reject) {
+		authAndGet('Duties', 'sheet')
+			.then(function(googleResponse) {
+				resolve(googleResponse);
+			})
+			.catch(function(err) {
+				console.log(err);
+			});				
+	})
+};
+
+
+/*
+* Authorizes and get chosen sheet/events from api
+*/
+function authAndGet(target ,type) {
 	return new Promise(function(resolve, reject) {
 		fs.readFile('client_secret.json', function(err, content) {
 			if (err) {
@@ -108,21 +84,26 @@ exports.sheetData = function() {
 		
 			authorize(JSON.parse(content))
 				.then(function(oauth2Client) {
-					return callAppsScript(oauth2Client, 'Duties');
+					if(type == 'events'){
+						return listEvents(oauth2Client, target)
+					} else if(type == 'sheet') {
+						return callAppsScript(oauth2Client, target);
+					}
 				})
-				.then(function(driveResponse) {
-					resolve(driveResponse);
+				.then(function(googleResponse) {
+					resolve(googleResponse);
 				})
 				.catch(function(err) {
-					console.log(err);
+					reject(err);
 				})
-		});			
-	})
-};
+		});
+	})		
+}
 
 
-
-
+/*
+* Authorizes Google api token
+*/
 function authorize(credentials) {
 	return new Promise(function(resolve, reject) {
 		var clientSecret = credentials.installed.client_secret;
@@ -151,6 +132,9 @@ function authorize(credentials) {
 	})
 }
 
+/*
+* Generate a new token for Google api credentials
+*/
 function getNewToken(oauth2Client) {
 	return new Promise(function(resolve, reject) {	
 		var authUrl = oauth2Client.generateAuthUrl({
@@ -178,6 +162,9 @@ function getNewToken(oauth2Client) {
 	})  
 }
 
+/*
+* Stores the token in credentials file
+*/
 function storeToken(token) {
 	return new Promise(function(resolve, reject) {
 		try {
@@ -192,6 +179,9 @@ function storeToken(token) {
 	})
 }
 
+/*
+* Lists events in a get request from a google calendar
+*/
 function listEvents(oauth2Client, calendarId) {
 	return new Promise(function(resolve, reject) {
 	  var calendar = google.calendar('v3');
@@ -222,6 +212,9 @@ function listEvents(oauth2Client, calendarId) {
 	})
 }
 
+/*
+* Runs chosen function from GoogleAppScripts
+*/
 function callAppsScript(oauth2Client, targetedSheet) {
 	return new Promise(function(resolve, reject) {
 		var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
