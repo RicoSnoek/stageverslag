@@ -16,8 +16,9 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
     })
 
     GoogleCalendar.getCalendarData().then(function(data) {
-        console.log(data.data);
+        console.log(data);
         $scope.events = data.data;
+        $scope.visitors = data.visitors;
     }).catch(function(err) {
         console.log(err);
     });
@@ -49,20 +50,33 @@ dashboard.factory('GetFeed', ['$http', function($http) {
     return {
         getFeedData : function(url) {
             return $http.get('/api/techcrunch');
-
         }
     }
 }]);
 
 
-dashboard.factory('GoogleCalendar', ['$http', function($http){
+dashboard.factory('GoogleCalendar', ['$http', '$q',  function($http, $q) {
     // TODO: Show displayName if not available email instead
     return {
         getCalendarData : function() {
-            return $http.get('/api/events');
-        },
-        getDisplayName: function(attendee) {
-            return attendee.displayName ? attendee.displayName : attendee.email;
+            var deferred = $q.defer();
+            $http.get('/api/events')
+            .success(function(data) {
+                var doubleData = [];
+                var visitorArray = [];
+                for(var i = 0; i < data.length; i++) {
+                    var attendees = data[i].attendees;
+                    for(var i = 0; i < attendees.length; i++) {
+                        if(attendees[i].email.indexOf('qelp') >= 0) {
+                            visitorArray.push(attendees[i]);
+                        }
+                    }
+                }
+                doubleData['visitors'] = visitorArray;
+                doubleData['data'] = data;
+                deferred.resolve(doubleData);
+            });
+            return deferred.promise;
         }
     }
 }]);
