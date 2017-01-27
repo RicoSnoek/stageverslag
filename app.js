@@ -9,6 +9,7 @@ var ejs = require('ejs');
 var request = require('request');
 
 var routes = require('./routes/index');
+//var apiRoutes = require('./api/api-routes');
 
 var dayDuty = require('./modules/dayduty');
 var google = require('./modules/googleapi');
@@ -34,6 +35,7 @@ dayDuty.mailPersonDuty(google);
 
 
 app.use('/', routes);
+//app.use('/', apiRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
