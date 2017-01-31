@@ -8,6 +8,13 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
 	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular-sanitize.js"></script>
     <script src="core.js"></script>
+    <script src="core.controller.js"></script>
+    <script src="factories/activities/activities.factory.js"></script>
+    <script src="factories/birthday/birthday.factory.js"></script>
+    <script src="factories/calendar/calendar.factory.js"></script>
+    <script src="factories/duty/duty.factory.js"></script>
+    <script src="factories/techcrunch/techcrunch.factory.js"></script>
+    <script src="filters/unique/unique.filter.js"></script>
 </head>
 <body ng-controller="mainController">
 	<div class="wrapper">
@@ -19,7 +26,7 @@
 			</div>			
 			<h3>Up next:  <span ng-bind="duty.tomorrow.name"></span></h3>
 			<div ng-if="visitors != ''">
-				<h4>Visitors: <span ng-repeat="visitor in visitors">{{ visitor }}</span></h4>
+				<h4>Visitors: <span ng-repeat="visitor in visitors | unique:'email'">{{ visitor.displayName ? visitor.displayName : visitor.email }} </span></h4>
 			</div>
 			<div ng-if="sheet != ''">
 				<h4>Lunch: {{ sheet[0].lunch }}</h4>
@@ -36,9 +43,6 @@
 		    	</div>
 			</div>
 		</div>
-
-
-
 	</div>
 	<div class="wrapper2">
 		<div class="room1">
