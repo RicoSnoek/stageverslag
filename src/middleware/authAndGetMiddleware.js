@@ -1,3 +1,5 @@
+//  Not used
+
 var express = require('express');
 var router = express.Router();
 
@@ -15,8 +17,7 @@ AuthAndGetMiddleware.prototype.getMiddleware = function(target, type) {
 			}).catch(function(error) {
 				res.status(500).send({error: error});
 			});
-		}
-		if(type == 'event') {
+		} else if(type == 'event') {
 			googleApi.authAndGetEvent(target).then(function(googleResponse) {
 				req.googleResponse = googleResponse;
 				next();
@@ -29,4 +30,4 @@ AuthAndGetMiddleware.prototype.getMiddleware = function(target, type) {
 	return router;
 }
 
-module.exports = new AuthAndGetMiddleware();
+module.exports = AuthAndGetMiddleware;

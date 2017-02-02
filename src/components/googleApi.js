@@ -12,7 +12,34 @@ var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 var GoogleApi = function () {
 }
 
-GoogleApi.prototype.listEvents = function () {
+GoogleApi.prototype.listEvents = function (oauth2Client, calendarId) {
+	return new Promise(function(resolve, reject) {
+	  var calendar = google.calendar('v3');
+	  calendar.events.list({
+	    auth: oauth2Client,
+	    calendarId: calendarId,
+	    timeMin: (new Date()).toISOString(),
+	    maxResults: 5,
+	    singleEvents: true,
+	    orderBy: 'startTime'
+	  }, function(err, response) {
+	    if (err) {
+	      reject(err);
+	    } else {
+		    var events = response.items;
+		    if (events.length == 0) {
+		      console.log('No upcoming events found.');
+		    } else {
+		      var eventArray = [];
+		      for (var i = 0; i < events.length; i++) {
+		        var event = events[i];
+		        eventArray.push(event);
+		      }
+				resolve(eventArray);
+		    }
+		}
+	  })
+	})	
 }
 
 GoogleApi.prototype.callAppsScript = function (oauth2Client, targetedSheet) {
@@ -62,30 +89,31 @@ GoogleApi.prototype.authAndGet = function () {
 	}
 }
 
-GoogleApi.prototype.authAndGetEvent = function () {
-	this.authAndGet()
-		.then(function (oauth2Client) {
-			return listEvents(oauth2Client, target)
-		})
-		.then(function (googleResponse) {
-			resolve(googleResponse);
-		})
-		.catch(function (err) {
-			reject(err);
-		})
-}
-
-GoogleApi.prototype.authAndGetSheet = function (target) {
+GoogleApi.prototype.authAndGetEvent = function (target) {
 	var that = this;
 
 	return new Promise(function (resolve, reject) {
 		that.authAndGet()
 			.then(function (oauth2Client) {
-				console.log('hier');
+				return that.listEvents(oauth2Client, target)
+			})
+			.then(function (googleResponse) {
+				resolve(googleResponse);
+			})
+			.catch(function (err) {
+				reject(err);
+			})
+	})
+}
+
+GoogleApi.prototype.authAndGetSheet = function (target) {
+	var that = this;
+	return new Promise(function (resolve, reject) {
+		that.authAndGet()
+			.then(function (oauth2Client) {
 				return that.callAppsScript(oauth2Client, target);
 			})
 			.then(function (googleResponse) {
-				console.log('google')
 				resolve(googleResponse);
 			})
 			.catch(function (err) {
@@ -96,7 +124,6 @@ GoogleApi.prototype.authAndGetSheet = function (target) {
 }
 
 GoogleApi.prototype.authorize = function (credentials) {
-	console.log('authroz');
 	return new Promise(function (resolve, reject) {
 		var clientSecret = credentials.installed.client_secret;
 		var clientId = credentials.installed.client_id;

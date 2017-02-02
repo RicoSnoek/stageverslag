@@ -2,12 +2,14 @@ dashboard.factory('GoogleCalendar', ['$http', '$q',  function($http, $q) {
     return {
         getCalendarData : function() {
             var deferred = $q.defer();
-            $http.get('/api/events')
+            $http.get('/api/google/calendar')
             .success(function(data) {
                 var doubleData = [];
                 var visitorArray = [];
                 var date = new Date();
                 var toDayMonth = date.getMonth() + '/' + date.getDate();
+
+                console.log(data);
 
                 for(var i = 0; i < data.length; i++) {
                     var attendees = data[i].attendees;

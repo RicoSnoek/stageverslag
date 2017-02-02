@@ -2,7 +2,7 @@ dashboard.factory('DutyData', ['$http', '$q', function($http, $q) {
     return {
         getDutyData : function() {
             var deferred = $q.defer();
-            $http.get('/api/duties')
+            $http.get('/api/google/duties')
             .success(function(data) {
                 var now = new Date();
                 var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());

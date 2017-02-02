@@ -1,12 +1,15 @@
 var express = require('express');
 var router = express.Router();
 
-var birthdayRoutes = require('./birthday/birthday-routes');
 
-router.get('/', function(req, res) {
-	res.send('Google');
-})
+var activitiesRoutes = require('./activities/activities-routes');
+var birthdaysRoutes  = require('./birthdays/birthdays-routes');
+var calendarRoutes   = require('./calendar/calendar-routes');
+var dutiesRoutes     = require('./duties/duties-routes');
 
-router.use('/birthday', birthdayRoutes);
+router.use('/activities', activitiesRoutes);
+router.use('/birthdays',  birthdaysRoutes);
+router.use('/calendar',   calendarRoutes);
+router.use('/duties',     dutiesRoutes);
 
 module.exports = router;
