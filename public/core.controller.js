@@ -3,15 +3,15 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
     GetFeed.getFeedData().then(function(res){
         console.log(res.data);
          $scope.feeds = res.data;
-    }).catch(function(res){
-        console.log(res);
+    }).catch(function(err) {
+        console.log(err);
     });
     GetSheet.getSheetData().then(function(res) {
         console.log(res);
         $scope.sheet = res;
-    }).catch(function(res) {
-        console.log(res);
-    })
+    }).catch(function(err) {
+        console.log(err);
+    });
 
     GoogleCalendar.getCalendarData().then(function(data) {
         console.log(data);
@@ -23,8 +23,8 @@ dashboard.controller('mainController', ['$interval', '$scope', 'DutyData', 'GetF
     DutyData.getDutyData().then(function(duty) {
         console.log(duty);
         $scope.duty = duty;
-    }).catch(function() {
-        console.log('Error');
+    }).catch(function(err) {
+        console.log(err);
     });
 
     GetBirthdays.getBirthdayData().then(function(birthdays) {

@@ -1,0 +1,154 @@
+var GoogleApi = function() {}
+
+	var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets'];
+	var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
+	    process.env.USERPROFILE) + '/.credentials/';
+	var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
+
+// GoogleApi.prototype.listEvents = function() {}
+
+GoogleApi.prototype.callAppsScript = function(oauth2Client, targetedSheet) {
+	return new Promise(function(resolve, reject) {
+		var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
+		var script = google.script('v1');
+		script.scripts.run({
+			auth: oauth2Client,
+			resource: {
+				function: 'exportSheetForApi',
+				parameters: [
+					targetedSheet
+				]
+			},
+			scriptId: scriptId
+		}, function(err, resp) {
+			if (err) {
+				reject(err);
+			}
+			else if (resp.error) {
+				var error = resp.error.details[0];
+				console.log('Script error message: ' + error.errorMessage);
+				console.log('Script error stacktrace:');
+
+				if (error.scriptStackTraceElements) {
+					for (var i = 0; i < error.scriptStackTraceElements.length; i++) {
+						var trace = error.scriptStackTraceElements[i];
+						console.log('\t%s: %s', trace.function, trace.lineNumber);
+					}
+				}
+			} 
+			else {
+				var sheetData = JSON.parse(resp.response.result);
+				resolve(sheetData);
+			}
+		})
+	});
+}
+
+GoogleApi.prototype.authAndGet = function() {
+	return new Promise(function(resolve, reject) {
+		fs.readFile('client_secret.json', function(err, content) {
+			if (err) {
+		    	console.log('Error loading client secret file: ' + err);
+		    	return;
+			}
+		
+			return this.authorize(JSON.parse(content))		
+		});
+	})	
+}
+
+GoogleApi.prototype.authAndGetEvent = function() {
+	this.authAndGet()
+		.then(function(oauth2Client) {
+			return listEvents(oauth2Client, target)
+		})
+		.then(function(googleResponse) {
+			resolve(googleResponse);
+		})
+		.catch(function(err) {
+			reject(err);
+		})
+}
+GoogleApi.prototype.authAndGetSheet = function() {
+	this.authAndGet()
+		.then(function(oauth2Client) {
+			return this.callAppsScript(oauth2Client, target);
+		})
+		.then(function(googleResponse) {
+			resolve(googleResponse);
+		})
+		.catch(function(err) {
+			reject(err);
+		})
+}
+
+GoogleApi.prototype.authorize = function(credentials) {
+	return new Promise(function(resolve, reject) {
+		var clientSecret = credentials.installed.client_secret;
+		var clientId = credentials.installed.client_id;
+		var redirectUrl = credentials.installed.redirect_uris[0];
+		var auth = new googleAuth();
+		var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+
+		// Check if we have previously stored a token.
+		fs.readFile(TOKEN_PATH, function(err, token) {
+		    if (err) {
+		    	this.getNewToken(oauth2Client).then(function(oauth2Client) {
+		    		oauth2Client.credentials = JSON.parse(token);
+		    	})
+		    	.then(function(oauth2Client) {
+		    		resolve(oauth2Client);
+		    	})
+		    	.catch(function(err) {
+		    		reject(err);
+		    	})
+		    } else {
+    			oauth2Client.credentials = JSON.parse(token);
+				resolve(oauth2Client);
+	    	}
+		})
+	})
+}
+
+GoogleApi.prototype.getNewToken = function(oauth2Client) {
+	return new Promise(function(resolve, reject) {	
+		var authUrl = oauth2Client.generateAuthUrl({
+	    	access_type: 'offline',
+	    	scope: SCOPES
+		});
+		console.log('Authorize this app by visiting this url: ', authUrl);
+		var rl = readline.createInterface({
+	    	input: process.stdin,
+	    	output: process.stdout
+		});
+		rl.question('Enter the code from that page here: ', function(code) {
+	    	rl.close();
+	    	oauth2Client.getToken(code, function(err, token) {
+	    		if (err) {
+	    		    console.log('Error while trying to retrieve access token', err);
+	    		    return;
+	    		}
+	    		oauth2Client.credentials = token;
+	    		this.storeToken(token).then(function(oauth2Client) {
+	    			resolve(oauth2Client);
+	    		});
+	    	});
+		});
+	}) 
+}
+
+GoogleApi.prototype.storeToken = function(token) {
+	return new Promise(function(resolve, reject) {
+		try {
+		    fs.mkdirSync(TOKEN_DIR);
+		} catch (err) {
+		    if (err.code != 'EEXIST') {
+			    throw err;
+		    }
+		}
+		fs.writeFile(TOKEN_PATH, JSON.stringify(token));
+		console.log('Token stored to ' + TOKEN_PATH);
+	})
+}
+
+module.exports = GoogleApi

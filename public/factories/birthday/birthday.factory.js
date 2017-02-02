@@ -3,7 +3,7 @@ dashboard.factory('GetBirthdays', ['$http', '$q', function($http, $q) {
     return {
         getBirthdayData : function() {
             var deferred = $q.defer();
-            $http.get('/api/birthdays')
+            $http.get('/google/api/birthdays')
             .success(function(data) {
                 var now = new Date();
                 var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());

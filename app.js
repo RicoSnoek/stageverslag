@@ -4,19 +4,16 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
 var ejs = require('ejs');
 var request = require('request');
 
 var routes = require('./routes/index');
-//var apiRoutes = require('./api/api-routes');
+var apiRoutes = require('./src/api/api-routes');
 
 var dayDuty = require('./modules/dayduty');
 var google = require('./modules/googleapi');
 
 var app = express();
-
-//mongoose.connect('mongodb://localhost:27017/');
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -29,13 +26,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-google.connectGoogleCalendar(app);
-google.getsheetsData(app);
+//google.connectGoogleCalendar(app);
+//google.getsheetsData(app);
 dayDuty.mailPersonDuty(google);
 
 
 app.use('/', routes);
-//app.use('/', apiRoutes);
+app.use('/', apiRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

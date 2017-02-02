@@ -15,9 +15,11 @@ dashboard.factory('GoogleCalendar', ['$http', '$q',  function($http, $q) {
                     var calendarDay = calendarStart.getMonth() + '/' + calendarStart.getDate();
 
                     if(toDayMonth.valueOf() == calendarDay.valueOf()) {
-                        for(var j = 0; j < attendees.length; j++) {
-                            if(attendees[j].email.indexOf('qelp') == 0) {
-                                visitorArray.push(attendees[j]);
+                        if(attendees != ''){
+                            for(var j = 0; j < attendees.length; j++) {
+                                if(attendees[j].email.indexOf('qelp') == 0) {
+                                    visitorArray.push(attendees[j]);
+                                }
                             }
                         }
                     } 

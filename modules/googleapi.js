@@ -5,7 +5,8 @@ var exports = module.exports = {};
 	var readline = require('readline');
 	var google = require('googleapis');
 	var googleAuth = require('google-auth-library');
-
+	var authAndGetMiddleware = require('../src/middleware/AuthAndGetMiddleware');
+	
 	// If modifying these scopes, delete your previously saved credentials
 	// at ~/.credentials/calendar-nodejs-quickstart.json
 	var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets'];
@@ -18,6 +19,7 @@ exports.connectGoogleCalendar = function(app) {
 	app.get('/api/events', function(req, nres) {
 		authAndGet('primary', 'events')
 			.then(function(googleResponse) {
+				console.log(googleResponse);
 				nres.status(200).json(googleResponse);
 			})
 			.catch(function(err) {
@@ -27,6 +29,7 @@ exports.connectGoogleCalendar = function(app) {
 }
 
 exports.getsheetsData = function(app) {
+
 	app.get('/api/duties/', function(req, nres) {	
 		authAndGet('Duties', 'sheet')
 			.then(function(googleResponse) {
@@ -47,14 +50,15 @@ exports.getsheetsData = function(app) {
 			});			
 	});
 
-	app.get('/api/birthdays/', function(req, nres) {	
-		authAndGet('Birthdays', 'sheet')
-			.then(function(googleResponse) {
-				nres.status(200).json(googleResponse);
-			})
-			.catch(function(err) {
-				console.log(err);
-			});		
+	app.get('/api/birthdays/', authAndGetMiddleware.getMiddleware('Birthdays', 'sheet'), function(req, nres) {	
+		nres.status(200).json(req.googleResponse);
+		// authAndGet('Birthdays', 'sheet')
+		// 	.then(function(googleResponse) {
+				//nres.status(200).json(googleResponse);
+			// })
+			// .catch(function(err) {
+			// 	console.log(err);
+			// });		
 	});
 }
 
