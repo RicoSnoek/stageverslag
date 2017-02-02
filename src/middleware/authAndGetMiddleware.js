@@ -5,25 +5,28 @@ var GoogleApi = require('../components/googleApi');
 
 var AuthAndGetMiddleware = function() {}
 
-
-
 AuthAndGetMiddleware.prototype.getMiddleware = function(target, type) {
-	return router.use(function(req, res, next) {
-		var googleAPi = new GoogleApi();
-
+	router.use(function(req, res, next) {
+		var googleApi = new GoogleApi();
 		if(type == 'sheet') {
 			googleApi.authAndGetSheet(target).then(function(googleResponse) {
 				req.googleResponse = googleResponse;
 				next();
-			})
+			}).catch(function(error) {
+				res.status(500).send({error: error});
+			});
 		}
 		if(type == 'event') {
 			googleApi.authAndGetEvent(target).then(function(googleResponse) {
 				req.googleResponse = googleResponse;
 				next();
-			})	
+			}).catch(function(error) {
+				next(error);
+			});
 		}	
 	});
+
+	return router;
 }
 
 module.exports = new AuthAndGetMiddleware();

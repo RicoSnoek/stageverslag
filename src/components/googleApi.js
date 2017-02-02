@@ -1,14 +1,22 @@
-var GoogleApi = function() {}
+var Promise = require('bluebird');
+var fs = require('fs');
+var googleAuth = require('google-auth-library');
+var readline = require('readline');
+var google = require('googleapis');
 
-	var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets'];
-	var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-	    process.env.USERPROFILE) + '/.credentials/';
-	var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
+var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets'];
+var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
+	process.env.USERPROFILE) + '/.credentials/';
+var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
-// GoogleApi.prototype.listEvents = function() {}
+var GoogleApi = function () {
+}
 
-GoogleApi.prototype.callAppsScript = function(oauth2Client, targetedSheet) {
-	return new Promise(function(resolve, reject) {
+GoogleApi.prototype.listEvents = function () {
+}
+
+GoogleApi.prototype.callAppsScript = function (oauth2Client, targetedSheet) {
+	return new Promise(function (resolve, reject) {
 		var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
 		var script = google.script('v1');
 		script.scripts.run({
@@ -20,7 +28,7 @@ GoogleApi.prototype.callAppsScript = function(oauth2Client, targetedSheet) {
 				]
 			},
 			scriptId: scriptId
-		}, function(err, resp) {
+		}, function (err, resp) {
 			if (err) {
 				reject(err);
 			}
@@ -35,7 +43,7 @@ GoogleApi.prototype.callAppsScript = function(oauth2Client, targetedSheet) {
 						console.log('\t%s: %s', trace.function, trace.lineNumber);
 					}
 				}
-			} 
+			}
 			else {
 				var sheetData = JSON.parse(resp.response.result);
 				resolve(sheetData);
@@ -43,47 +51,53 @@ GoogleApi.prototype.callAppsScript = function(oauth2Client, targetedSheet) {
 		})
 	});
 }
+//
+GoogleApi.prototype.authAndGet = function () {
+	var file = fs.readFileSync(process.cwd()+'/client_secret.json');
 
-GoogleApi.prototype.authAndGet = function() {
-	return new Promise(function(resolve, reject) {
-		fs.readFile('client_secret.json', function(err, content) {
-			if (err) {
-		    	console.log('Error loading client secret file: ' + err);
-		    	return;
-			}
-		
-			return this.authorize(JSON.parse(content))		
-		});
-	})	
+	if (!file) {
+		console.log('Error loading client secret file: ' + err);
+	} else {
+		return this.authorize(JSON.parse(file));
+	}
 }
 
-GoogleApi.prototype.authAndGetEvent = function() {
+GoogleApi.prototype.authAndGetEvent = function () {
 	this.authAndGet()
-		.then(function(oauth2Client) {
+		.then(function (oauth2Client) {
 			return listEvents(oauth2Client, target)
 		})
-		.then(function(googleResponse) {
+		.then(function (googleResponse) {
 			resolve(googleResponse);
 		})
-		.catch(function(err) {
-			reject(err);
-		})
-}
-GoogleApi.prototype.authAndGetSheet = function() {
-	this.authAndGet()
-		.then(function(oauth2Client) {
-			return this.callAppsScript(oauth2Client, target);
-		})
-		.then(function(googleResponse) {
-			resolve(googleResponse);
-		})
-		.catch(function(err) {
+		.catch(function (err) {
 			reject(err);
 		})
 }
 
-GoogleApi.prototype.authorize = function(credentials) {
-	return new Promise(function(resolve, reject) {
+GoogleApi.prototype.authAndGetSheet = function (target) {
+	var that = this;
+
+	return new Promise(function (resolve, reject) {
+		that.authAndGet()
+			.then(function (oauth2Client) {
+				console.log('hier');
+				return that.callAppsScript(oauth2Client, target);
+			})
+			.then(function (googleResponse) {
+				console.log('google')
+				resolve(googleResponse);
+			})
+			.catch(function (err) {
+				console.log('catch', err)
+				reject(err);
+			})
+	});
+}
+
+GoogleApi.prototype.authorize = function (credentials) {
+	console.log('authroz');
+	return new Promise(function (resolve, reject) {
 		var clientSecret = credentials.installed.client_secret;
 		var clientId = credentials.installed.client_id;
 		var redirectUrl = credentials.installed.redirect_uris[0];
@@ -91,60 +105,60 @@ GoogleApi.prototype.authorize = function(credentials) {
 		var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
 		// Check if we have previously stored a token.
-		fs.readFile(TOKEN_PATH, function(err, token) {
-		    if (err) {
-		    	this.getNewToken(oauth2Client).then(function(oauth2Client) {
-		    		oauth2Client.credentials = JSON.parse(token);
-		    	})
-		    	.then(function(oauth2Client) {
-		    		resolve(oauth2Client);
-		    	})
-		    	.catch(function(err) {
-		    		reject(err);
-		    	})
-		    } else {
-    			oauth2Client.credentials = JSON.parse(token);
+		fs.readFile(TOKEN_PATH, function (err, token) {
+			if (err) {
+				this.getNewToken(oauth2Client).then(function (oauth2Client) {
+					oauth2Client.credentials = JSON.parse(token);
+				})
+					.then(function (oauth2Client) {
+						resolve(oauth2Client);
+					})
+					.catch(function (err) {
+						reject(err);
+					})
+			} else {
+				oauth2Client.credentials = JSON.parse(token);
 				resolve(oauth2Client);
-	    	}
+			}
 		})
 	})
 }
 
-GoogleApi.prototype.getNewToken = function(oauth2Client) {
-	return new Promise(function(resolve, reject) {	
+GoogleApi.prototype.getNewToken = function (oauth2Client) {
+	return new Promise(function (resolve, reject) {
 		var authUrl = oauth2Client.generateAuthUrl({
-	    	access_type: 'offline',
-	    	scope: SCOPES
+			access_type: 'offline',
+			scope: SCOPES
 		});
 		console.log('Authorize this app by visiting this url: ', authUrl);
 		var rl = readline.createInterface({
-	    	input: process.stdin,
-	    	output: process.stdout
+			input: process.stdin,
+			output: process.stdout
 		});
-		rl.question('Enter the code from that page here: ', function(code) {
-	    	rl.close();
-	    	oauth2Client.getToken(code, function(err, token) {
-	    		if (err) {
-	    		    console.log('Error while trying to retrieve access token', err);
-	    		    return;
-	    		}
-	    		oauth2Client.credentials = token;
-	    		this.storeToken(token).then(function(oauth2Client) {
-	    			resolve(oauth2Client);
-	    		});
-	    	});
+		rl.question('Enter the code from that page here: ', function (code) {
+			rl.close();
+			oauth2Client.getToken(code, function (err, token) {
+				if (err) {
+					console.log('Error while trying to retrieve access token', err);
+					return;
+				}
+				oauth2Client.credentials = token;
+				this.storeToken(token).then(function (oauth2Client) {
+					resolve(oauth2Client);
+				});
+			});
 		});
-	}) 
+	})
 }
 
-GoogleApi.prototype.storeToken = function(token) {
-	return new Promise(function(resolve, reject) {
+GoogleApi.prototype.storeToken = function (token) {
+	return new Promise(function (resolve, reject) {
 		try {
-		    fs.mkdirSync(TOKEN_DIR);
+			fs.mkdirSync(TOKEN_DIR);
 		} catch (err) {
-		    if (err.code != 'EEXIST') {
-			    throw err;
-		    }
+			if (err.code != 'EEXIST') {
+				throw err;
+			}
 		}
 		fs.writeFile(TOKEN_PATH, JSON.stringify(token));
 		console.log('Token stored to ' + TOKEN_PATH);
