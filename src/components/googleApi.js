@@ -13,7 +13,7 @@ var GoogleApi = function () {
 }
 
 GoogleApi.prototype.listEvents = function (oauth2Client, calendarId) {
-	return new Promise(function(resolve, reject) {
+	return new Promise(function (resolve, reject) {
 	  var calendar = google.calendar('v3');
 	  calendar.events.list({
 	    auth: oauth2Client,
