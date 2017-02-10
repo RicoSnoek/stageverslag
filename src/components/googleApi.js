@@ -9,6 +9,11 @@ var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
 	process.env.USERPROFILE) + '/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
+// This is the Script ID needed for Google App scripts
+var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
+// THis is the function Google App Scripts should run in the callAppsScript function
+var scriptFunction = 'exportSheetForApi';
+
 var GoogleApi = function () {
 }
 
@@ -44,12 +49,11 @@ GoogleApi.prototype.listEvents = function (oauth2Client, calendarId) {
 
 GoogleApi.prototype.callAppsScript = function (oauth2Client, targetedSheet) {
 	return new Promise(function (resolve, reject) {
-		var scriptId = 'MmkF7nOhnoTYjpNZb7M2yyj1bVHqDmvVD';
 		var script = google.script('v1');
 		script.scripts.run({
 			auth: oauth2Client,
 			resource: {
-				function: 'exportSheetForApi',
+				function: scriptFunction,
 				parameters: [
 					targetedSheet
 				]

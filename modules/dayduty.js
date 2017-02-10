@@ -1,6 +1,6 @@
 var exports = module.exports = {};
 
-exports.mailPersonDuty = function(google) {
+exports.mailPersonDuty = function() {
 	var nodemailer = require('nodemailer'),
 		schedule = require('node-schedule'),
 		request = require("request"),
@@ -10,6 +10,9 @@ exports.mailPersonDuty = function(google) {
 	// rule.minute = 0;
 	rule.second = 0;
 
+	var GoogleApi = require('../src/components/googleApi');
+	var googleApi = new GoogleApi();
+	
 	var url = "http://localhost:3000/javascripts/temp.json";
 	var transporter = nodemailer.createTransport('smtps://qelpkeuken@gmail.com:d4shbo4rd@smtp.gmail.com');
 	var mailOptions = {
@@ -24,25 +27,24 @@ exports.mailPersonDuty = function(google) {
 		var now = new Date();
 		var today = new Date( now.getFullYear(), now.getMonth(), now.getDate());
 
-		google.sheetData().then(function(driveResponse) {
-		
-	        for(var i = 0; i < driveResponse.length; i++) {
-			    var duty = driveResponse[i];
-			    duty.date = new Date(duty.date);
-			    if (today.valueOf() == duty.date.valueOf()) {
-			    	mailOptions.to = duty.email;
-			    	//console.log(duty.email);
+		googleApi.authAndGetSheet('Duties').then(function(googleResponse) {	
+		        for(var i = 0; i < googleResponse.length; i++) {
+				    var duty = googleResponse[i];
+				    duty.date = new Date(duty.date);
+				    if (today.valueOf() == duty.date.valueOf()) {
+				    	mailOptions.to = duty.email;
+				    	//console.log(duty.email);
 
-			  		//transporter.sendMail(mailOptions, function(error, info){
-					//     if(error){
-					//         return console.log(error);
-					//     }
-					//     console.log('Message sent: ' + info.response);
-					// });
-	        	}
-	        }	
-		});
-	});
+				  		//transporter.sendMail(mailOptions, function(error, info){
+						//     if(error){
+						//         return console.log(error);
+						//     }
+						//     console.log('Message sent: ' + info.response);
+						// });
+		        	}
+		        }			
+			}).catch(function(error) {
+				console.log(error)
+			});
+	});	
 }
-
-// TODO: Get data from api instead of local temp.json

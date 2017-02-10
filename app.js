@@ -28,7 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //google.connectGoogleCalendar(app);
 //google.getsheetsData(app);
-dayDuty.mailPersonDuty(google);
+dayDuty.mailPersonDuty();
 
 
 app.use('/', routes);
